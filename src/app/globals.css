@@ -1,0 +1,78 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-primary: #2D6A4F;
+  --color-secondary: #1B4965;
+  --color-accent: #E9C46A;
+  --color-background: #F8F9FA;
+  --color-surface: #FFFFFF;
+  --color-text-primary: #1A1A2E;
+  --color-text-secondary: #6C757D;
+  --color-success: #40916C;
+  --color-warning: #E76F51;
+  --color-error: #D62828;
+  --color-border: #DEE2E6;
+  --color-muted: #ADB5BD;
+}
+
+.dark {
+  --color-primary: #40916C;
+  --color-secondary: #4E8BB5;
+  --color-accent: #E9C46A;
+  --color-background: #0F172A;
+  --color-surface: #1E293B;
+  --color-text-primary: #F1F5F9;
+  --color-text-secondary: #94A3B8;
+  --color-success: #52B788;
+  --color-warning: #F4845F;
+  --color-error: #EF4444;
+  --color-border: #334155;
+  --color-muted: #64748B;
+}
+
+@layer base {
+  body {
+    @apply bg-background text-text-primary font-sans antialiased;
+  }
+
+  * {
+    @apply border-border;
+  }
+}
+
+@layer components {
+  .container {
+    @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+}
+
+@layer utilities {
+  .focus-ring {
+    @apply focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-background);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-muted);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-secondary);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-muted) var(--color-background);
+}

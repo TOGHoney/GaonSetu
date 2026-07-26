@@ -1,0 +1,338 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id @default(cuid())
+  name          String
+  email         String         @unique
+  phone         String?        @unique
+  passwordHash  String
+  role          UserRole       @default(VILLAGER)
+  isVerified    Boolean        @default(false)
+  isActive      Boolean        @default(true)
+  isSuspended   Boolean        @default(false)
+  profilePhoto  String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  villagerProfile   VillagerProfile?
+  consumerProfile   ConsumerProfile?
+  adminProfile      AdminProfile?
+
+  listings          Listing[]          @relation("VillagerListings")
+  complaints        Complaint[]        @relation("VillagerComplaints")
+  assignedComplaints Complaint[]       @relation("AssignedComplaints")
+  announcements     Announcement[]
+  contactInquiries  ContactInquiry[]
+  favorites         Favorite[]
+  auditLogs         AuditLog[]
+  notifications     Notification[]
+}
+
+enum UserRole {
+  ADMIN
+  VILLAGER
+  CONSUMER
+}
+
+model VillagerProfile {
+  id                   String   @id @default(cuid())
+  userId               String   @unique
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  village              String?
+  panchayat            String?
+  district             String?
+  state                String?
+  pincode              String?
+  aadhaarVerified      Boolean  @default(false)
+  occupation           String?
+  landholdingType      String?
+  farmingType          String?
+  dairyActivity        Boolean  @default(false)
+  smallBusinessCategory String?
+  bio                  String?
+  totalListings        Int      @default(0)
+  totalComplaints      Int      @default(0)
+}
+
+model ConsumerProfile {
+  id            String  @id @default(cuid())
+  userId        String  @unique
+  user          User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  city          String?
+  state         String?
+  pincode       String?
+  preferences   Json?
+  favoriteIds   String[]
+}
+
+model AdminProfile {
+  id              String  @id @default(cuid())
+  userId          String  @unique
+  user            User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  department      String?
+  designation     String?
+  jurisdictionArea String?
+}
+
+model Listing {
+  id              String          @id @default(cuid())
+  villagerId      String
+  villager        User            @relation("VillagerListings", fields: [villagerId], references: [id])
+  category        ListingCategory
+  title           String
+  description     String?
+  price           Float
+  priceUnit       String?
+  currency        String          @default("INR")
+  quantityAvailable Float
+  quantityUnit    String?
+  quantityLeft    Float?
+  location        String?
+  village         String?
+  district        String?
+  state           String?
+  pincode         String?
+  photos          Json?
+  isActive        Boolean         @default(true)
+  isVerified      Boolean         @default(false)
+  isFlagged       Boolean         @default(false)
+  views           Int             @default(0)
+  inquiryCount    Int             @default(0)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  expiresAt       DateTime?
+
+  cropDetails         CropDetails?
+  milkDetails         MilkDetails?
+  businessDetails     BusinessDetails?
+  contactInquiries    ContactInquiry[]
+  favorites           Favorite[]
+}
+
+enum ListingCategory {
+  CROP
+  MILK
+  FRUITS_VEGETABLES
+  LIVESTOCK
+  HANDMADE
+  BUSINESS
+  OTHER
+}
+
+model CropDetails {
+  id                   String   @id @default(cuid())
+  listingId            String   @unique
+  listing              Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  cropName             String?
+  season               String?
+  harvestStatus        String?
+  isOrganic            Boolean  @default(false)
+  expectedHarvestDate  DateTime?
+  quantityUnit         CropQuantityUnit?
+}
+
+enum CropQuantityUnit {
+  kg
+  quintal
+  ton
+  bag
+}
+
+model MilkDetails {
+  id               String     @id @default(cuid())
+  listingId        String     @unique
+  listing          Listing    @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  milkType         MilkType
+  dailyQuantity    Float?
+  unit             String?
+  supplyTime       SupplyTime
+  isRecurring      Boolean    @default(false)
+  pricePerLiter    Float?
+  deliveryOption   DeliveryOption
+}
+
+enum MilkType {
+  COW
+  BUFFALO
+  MIXED
+}
+
+enum SupplyTime {
+  MORNING
+  EVENING
+  BOTH
+}
+
+enum DeliveryOption {
+  PICKUP
+  DELIVERY
+  BOTH
+}
+
+model BusinessDetails {
+  id                String   @id @default(cuid())
+  listingId         String   @unique
+  listing           Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  businessName      String?
+  businessCategory  String?
+  servicesOffered   Json?
+  operatingHours    String?
+  homeDelivery      Boolean  @default(false)
+  localPickup       Boolean  @default(false)
+}
+
+model Complaint {
+  id              String          @id @default(cuid())
+  villagerId      String
+  villager        User            @relation("VillagerComplaints", fields: [villagerId], references: [id])
+  title           String
+  description     String?
+  category        ComplaintCategory
+  village         String?
+  district        String?
+  state           String?
+  pincode         String?
+  dateOfIssue     DateTime?
+  priority        ComplaintPriority @default(MEDIUM)
+  status          ComplaintStatus   @default(SUBMITTED)
+  trackingId      String          @unique @default(uuid())
+  isAnonymous     Boolean         @default(false)
+  contactPhone    String?
+  latitude        Float?
+  longitude       Float?
+  assignedTo      String?
+  assignedUser    User?           @relation("AssignedComplaints", fields: [assignedTo], references: [id])
+  resolutionNotes String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  media           ComplaintMedia[]
+}
+
+enum ComplaintCategory {
+  WATER
+  ELECTRICITY
+  ROAD
+  SANITATION
+  AGRICULTURE
+  HEALTH
+  EDUCATION
+  RATION
+  CORRUPTION
+  OTHER
+}
+
+enum ComplaintPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum ComplaintStatus {
+  SUBMITTED
+  RECEIVED
+  UNDER_REVIEW
+  ASSIGNED
+  IN_PROGRESS
+  RESOLVED
+  REJECTED
+  REOPENED
+}
+
+model ComplaintMedia {
+  id           String    @id @default(cuid())
+  complaintId  String
+  complaint    Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  type         MediaType
+  fileUrl      String
+  thumbnailUrl String?
+  uploadedAt   DateTime  @default(now())
+}
+
+enum MediaType {
+  PHOTO
+  VIDEO
+}
+
+model Announcement {
+  id          String           @id @default(cuid())
+  adminId     String
+  admin       User             @relation(fields: [adminId], references: [id])
+  title       String
+  body        String?
+  type        AnnouncementType @default(NOTICE)
+  targetRole  String?
+  targetArea  String?
+  isPublished Boolean          @default(false)
+  publishedAt DateTime?
+  expiresAt   DateTime?
+}
+
+enum AnnouncementType {
+  NOTICE
+  SCHEME
+  EMERGENCY
+  ALERT
+}
+
+model ContactInquiry {
+  id            String   @id @default(cuid())
+  listingId     String
+  listing       Listing  @relation(fields: [listingId], references: [id])
+  consumerId    String?
+  consumer      User?    @relation(fields: [consumerId], references: [id])
+  message       String?
+  contactMethod String?
+  createdAt     DateTime @default(now())
+}
+
+model Favorite {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  listingId  String
+  listing    Listing  @relation(fields: [listingId], references: [id])
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, listingId])
+}
+
+model AuditLog {
+  id         String     @id @default(cuid())
+  userId     String
+  user       User       @relation(fields: [userId], references: [id])
+  action     AuditAction
+  entityType String
+  entityId   String
+  changes    Json?
+  ipAddress  String?
+  createdAt  DateTime   @default(now())
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  VERIFY
+  SUSPEND
+  BLOCK
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  title     String
+  body      String?
+  type      String?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
