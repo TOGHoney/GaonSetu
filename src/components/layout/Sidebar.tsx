@@ -3,6 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { signOut } from "next-auth/react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -15,12 +16,12 @@ import {
   Search,
   Heart,
   Users,
-  FileText,
   Megaphone,
   BarChart3,
   ClipboardList,
   Menu,
   X,
+  LogOut,
 } from "lucide-react"
 
 interface SidebarProps {
@@ -70,30 +71,46 @@ export default function Sidebar({ role }: SidebarProps) {
   const [open, setOpen] = useState(false)
   const links = roleLinks[role] ?? getVillagerLinks()
 
+  const showLogout = role === "villager" || role === "admin"
+
   const sidebarContent = (
-    <nav className="flex flex-col gap-1 p-3">
-      {links.map((item) => {
-        const isActive =
-          item.href === `/${role}/dashboard`
-            ? pathname === `/${role}/dashboard`
-            : pathname.startsWith(item.href)
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            onClick={() => setOpen(false)}
-            className={cn(
-              "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-              isActive
-                ? "bg-primary-50 text-primary-600"
-                : "text-text-secondary hover:bg-gray-100 hover:text-text-primary"
-            )}
+    <nav className="flex h-full flex-col gap-1 p-3">
+      <div className="flex flex-col gap-1">
+        {links.map((item) => {
+          const isActive =
+            item.href === `/${role}/dashboard`
+              ? pathname === `/${role}/dashboard`
+              : pathname.startsWith(item.href)
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              onClick={() => setOpen(false)}
+              className={cn(
+                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                isActive
+                  ? "bg-primary-50 text-primary-600"
+                  : "text-text-secondary hover:bg-gray-100 hover:text-text-primary"
+              )}
+            >
+              <item.icon className="h-5 w-5 shrink-0" />
+              {item.label}
+            </Link>
+          )
+        })}
+      </div>
+      {showLogout && (
+        <div className="mt-auto border-t border-border pt-3">
+          <button
+            type="button"
+            onClick={() => signOut({ callbackUrl: "/" })}
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
           >
-            <item.icon className="h-5 w-5 shrink-0" />
-            {item.label}
-          </Link>
-        )
-      })}
+            <LogOut className="h-5 w-5 shrink-0" />
+            Logout
+          </button>
+        </div>
+      )}
     </nav>
   )
 
@@ -120,7 +137,7 @@ export default function Sidebar({ role }: SidebarProps) {
       {/* Mobile sidebar */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-40 w-64 bg-white shadow-lg transition-transform duration-300 md:hidden",
+          "fixed inset-y-0 left-0 z-40 flex w-64 flex-col bg-white shadow-lg transition-transform duration-300 md:hidden",
           open ? "translate-x-0" : "-translate-x-full"
         )}
       >
@@ -133,7 +150,7 @@ export default function Sidebar({ role }: SidebarProps) {
       </aside>
 
       {/* Desktop sidebar */}
-      <aside className="hidden w-64 shrink-0 border-r border-border bg-white md:block">
+      <aside className="hidden w-64 shrink-0 flex-col border-r border-border bg-white md:flex">
         <div className="flex h-16 items-center border-b border-border px-4">
           <span className="text-lg font-bold text-primary-500">
             {role.charAt(0).toUpperCase() + role.slice(1)} Panel
